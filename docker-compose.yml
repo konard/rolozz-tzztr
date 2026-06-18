@@ -1,0 +1,9 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: wb-frontend
+    ports:
+      - "3000:3000"
+    restart: always
