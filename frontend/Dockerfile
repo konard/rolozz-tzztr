@@ -6,7 +6,8 @@ ENV NPM_CONFIG_ALLOW_SCRIPTS=true
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+#RUN npm ci
+RUN npm install --unsafe-perm
 
 COPY . .
 RUN npm run build
