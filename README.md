@@ -1,6 +1,6 @@
 # wb-app
 
-
+Add pipelines ci/cd
 
 ## Getting started
 
