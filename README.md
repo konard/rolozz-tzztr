@@ -227,8 +227,85 @@ swap
 NODE_OPTIONS
 
 отключения prerender
-
 CI будет собирать Nuxt 4 стабильно.
+-----------------------------
+gitlab‑runner может выполнять:
+
+docker
+
+docker compose
+
+docker build
+
+docker tag
+
+docker run
+
+Делаем всё по шагам, без пропусков.
+
+🚀 Шаг 1 — Проверяем, установлен ли Docker Engine
+На сервере:
+
+bash
+docker --version
+Если видишь что‑то вроде:
+
+Код
+Docker version 26.x.x
+— отлично.
+
+Если нет — ставим Docker Engine:
+
+bash
+curl -fsSL https://get.docker.com | sudo sh
+🚀 Шаг 2 — Устанавливаем Docker Compose V2 (правильный способ)
+Docker Compose V2 — это плагин к Docker, а не отдельный бинарь.
+
+Устанавливаем:
+
+bash
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo curl -SL https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-linux-x86_64 \
+  -o /usr/local/lib/docker/cli-plugins/docker-compose
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+Проверяем:
+
+bash
+docker compose version
+Если видишь:
+
+Код
+Docker Compose version v2.29.2
+— всё отлично.
+
+🚀 Шаг 3 — Добавляем gitlab-runner в группу docker
+bash
+sudo usermod -aG docker gitlab-runner
+Перезапускаем сервисы:
+
+bash
+sudo systemctl restart docker
+sudo gitlab-runner restart
+🚀 Шаг 4 — Проверяем, что gitlab-runner видит docker и compose
+bash
+sudo -u gitlab-runner bash -lc "docker info"
+sudo -u gitlab-runner bash -lc "docker compose version"
+Если обе команды работают — deploy‑job будет успешным.
+
+🚀 Шаг 5 — Если gitlab-runner всё ещё не видит compose, добавляем PATH
+Добавляем в .bash_profile:
+
+bash
+echo 'export PATH=$PATH:/usr/local/lib/docker/cli-plugins' \
+  | sudo tee -a /home/gitlab-runner/.bash_profile
+Перезапускаем runner:
+
+bash
+sudo gitlab-runner restart
+Проверяем снова:
+
+bash
+sudo -u gitlab-runner bash -lc "docker compose version"
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
