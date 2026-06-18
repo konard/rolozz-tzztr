@@ -3,11 +3,13 @@ FROM node:26-bullseye AS build
 ENV NPM_CONFIG_STRICT_ALLOW_SCRIPTS=false
 ENV NPM_CONFIG_ALLOW_SCRIPTS=true
 
+RUN npm install -g npm@10
+
 WORKDIR /app
 
 COPY package*.json ./
 #RUN npm ci
-RUN npm install --unsafe-perm
+RUN npm ci
 
 COPY . .
 RUN npm run build
