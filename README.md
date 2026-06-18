@@ -4,6 +4,109 @@ Add pipelines ci/cd
 
 ## Getting started
 
+🚀 Установка NVM (Node Version Manager)
+1) Устанавливаем nvm
+bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+Затем активируем:
+
+bash
+export NVM_DIR="$HOME/.nvm"
+source "$NVM_DIR/nvm.sh"
+Чтобы nvm работал всегда — добавляем в ~/.bashrc:
+
+bash
+echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bashrc
+echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> ~/.bashrc
+Перезагружаем сессию:
+
+bash
+source ~/.bashrc
+Проверяем:
+
+bash
+nvm --version
+🚀 2) Устанавливаем Node 26 (как на Windows)
+bash
+nvm install 26
+nvm use 26
+nvm alias default 26
+Проверяем:
+
+bash
+node -v
+npm -v
+🚀 3) Делаем Node/npm доступными для GitLab Runner (shell‑executor)
+GitLab Runner запускает job не под твоим пользователем, а под пользователем:
+
+Код
+gitlab-runner
+Поэтому нужно включить nvm и для него.
+
+3.1) Копируем nvm в его домашнюю директорию
+bash
+sudo mkdir -p /home/gitlab-runner/.nvm
+sudo cp -r ~/.nvm/* /home/gitlab-runner/.nvm/
+sudo chown -R gitlab-runner:gitlab-runner /home/gitlab-runner/.nvm
+3.2) Добавляем nvm в его .bashrc
+bash
+sudo bash -c 'echo "export NVM_DIR=\"/home/gitlab-runner/.nvm\"" >> /home/gitlab-runner/.bashrc'
+sudo bash -c 'echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"" >> /home/gitlab-runner/.bashrc'
+3.3) Устанавливаем Node 26 для gitlab-runner
+bash
+sudo -u gitlab-runner bash -lc "nvm install 26"
+sudo -u gitlab-runner bash -lc "nvm alias default 26"
+sudo -u gitlab-runner bash -lc "node -v"
+sudo -u gitlab-runner bash -lc "npm -v"
+Если вывод есть — всё работает.
+
+🎯 4) Проверяем, что CI теперь видит npm
+Запускаем тестовый pipeline:
+
+yaml
+test-npm:
+  stage: build
+  script:
+    - node -v
+    - npm -v
+Если CI выводит версии — победа.
+
+🎉 Итог
+Теперь:
+
+GitLab Runner видит npm и node
+build-job не падает
+CI/CD работает стабильно
+
+gribanov@fxyulowibm:/tmp$ nvm install node lts
+
+🎯 1. Устанавливаем libatomic (обязательно для Node 26)
+На Ubuntu/Debian:
+
+sudo apt update
+sudo apt install -y libatomic1
+ldconfig -p | grep libatomic
+Должно появиться:
+libatomic.so.1 (libc6,x86-64) => /usr/lib/x86_64-linux-gnu/libatomic.so.1
+
+bash
+node -v
+npm -v
+
+🎯 Решение: подключить nvm в .bash_profile (а не в .bashrc)
+У пользователя gitlab-runner нет .bash_profile, поэтому создаём его.
+
+✔️ 1. Создаём .bash_profile для gitlab-runner
+bash
+sudo bash -c 'echo "export NVM_DIR=\"/home/gitlab-runner/.nvm\"" > /home/gitlab-runner/.bash_profile'
+sudo bash -c 'echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"" >> /home/gitlab-runner/.bash_profile'
+sudo chown gitlab-runner:gitlab-runner /home/gitlab-runner/.bash_profile
+✔️ 2. Проверяем, что nvm теперь подхватывается
+bash
+sudo -u gitlab-runner bash -lc "nvm --version"
+Если видишь версию — победа.
+
+
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
 Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
