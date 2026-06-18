@@ -106,6 +106,129 @@ bash
 sudo -u gitlab-runner bash -lc "nvm --version"
 Если видишь версию — победа.
 
+🎯 Как убедиться, что это OOM (Out Of Memory)
+На сервере:
+
+Код
+dmesg -T | grep -i kill
+Ты увидишь:
+
+Код
+Out of memory: Kill process 12345 (node) score 987 or sacrifice child
+Killed process 12345 (node)
+🎯 Почему это происходит именно в CI, а не локально
+Потому что:
+
+локально у тебя 16–64 GB RAM
+
+на сервере runner’а — 1–2 GB
+
+Nuxt 4 в CI собирается в продакшн‑режиме, что требует больше памяти
+
+SSR + prerenderer → жрут память
+
+Vite 7 + Rollup → жрут память
+
+🎯 Решение №1 (лучшее): отключить prerender в CI
+В nuxt.config.ts:
+
+ts
+export default defineNuxtConfig({
+  nitro: {
+    prerender: {
+      crawlLinks: false,
+      routes: []
+    }
+  }
+})
+Или вообще:
+
+ts
+prerender: false
+Nuxt 4 в CI не должен делать prerender, это делает Docker‑сборка.
+
+🎯 Решение №2: ограничить память Node в CI
+В build‑job:
+
+yaml
+script:
+  - export NODE_OPTIONS="--max-old-space-size=2048"
+  - npm ci
+  - npm run build
+Это даёт Node 2 GB памяти.
+
+🎯 Решение №3: увеличить swap на сервере (очень эффективно)
+Если у тебя 1–2 GB RAM — добавляем swap:
+
+Код
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+Проверяем:
+
+Код
+free -h
+Теперь у runner’а есть 4 GB виртуальной памяти.
+
+🎯 Решение №4: собирать Nuxt в Docker, а не в CI
+Это лучший продакшн‑вариант.
+
+Вместо:
+
+Код
+npm ci
+npm run build
+делаем:
+
+yaml
+script:
+  - docker compose build frontend
+И CI больше не жрёт память — всё делает Docker.
+
+🎯 Решение №5: отключить SSR в CI (временно)
+В nuxt.config.ts:
+
+ts
+ssr: false
+Но это костыль.
+
+🎯 Что тебе делать прямо сейчас (пошагово)
+✔️ Шаг 1 — добавить swap (самое быстрое)
+Код
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+✔️ Шаг 2 — добавить NODE_OPTIONS в CI
+yaml
+script:
+  - export NODE_OPTIONS="--max-old-space-size=2048"
+  - npm ci
+  - npm run build
+✔️ Шаг 3 — отключить prerender в CI
+В nuxt.config.ts:
+
+ts
+nitro: {
+  prerender: false
+}
+🎉 Итог
+Ошибка:
+
+Код
+Killed
+— это OOM Killer, а не проблема Nuxt.
+
+После:
+
+swap
+
+NODE_OPTIONS
+
+отключения prerender
+
+CI будет собирать Nuxt 4 стабильно.
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
