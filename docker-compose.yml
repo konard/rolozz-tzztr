@@ -4,6 +4,36 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: wb-frontend
+    env_file: .env
     ports:
       - "3000:3000"
+    depends_on:
+      - db
+      - redis
     restart: always
+
+  db:
+    image: postgres:16
+    container_name: wb-postgres
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+  redis:
+    image: redis/redis-stack:latest
+    container_name: wb-redis
+    ports:
+      - "6379:6379"
+      - "8001:8001" # RedisInsight
+    restart: always
+
+volumes:
+  db_data:
+
