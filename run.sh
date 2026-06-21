@@ -62,27 +62,34 @@ case "$1" in
       ./ "$PROJECT_DIR/"
     ;;
 
-  deploy-frontend)
-    log "DEPLOY FRONTEND" "Сохранение предыдущего образа"
-    docker tag $FRONTEND_CONTAINER:latest $FRONTEND_CONTAINER:previous || true
+deploy-frontend)
+  log "DEPLOY FRONTEND" "Сохранение предыдущего образа"
+  docker tag $FRONTEND_CONTAINER:latest $FRONTEND_CONTAINER:previous || true
 
-    log "DEPLOY FRONTEND" "Сборка нового образа"
-    $COMPOSE build $FRONTEND_SERVICE
+  log "DEPLOY FRONTEND" "Сборка нового образа"
+  $COMPOSE build $FRONTEND_SERVICE
 
-    log "DEPLOY FRONTEND" "Запуск нового контейнера"
-    $COMPOSE up -d $FRONTEND_SERVICE
+  log "DEPLOY FRONTEND" "Запуск нового контейнера"
+  $COMPOSE up -d $FRONTEND_SERVICE
 
-    log "HEALTHCHECK" "Проверка доступности $HEALTHCHECK_URL"
-    sleep 5
+  log "MIGRATIONS" "Применяем миграции Prisma"
+  docker exec $FRONTEND_CONTAINER npx prisma migrate deploy || {
+    log "ERROR" "Миграции упали — откат"
+    ./run.sh rollback
+    exit 1
+  }
 
-    if curl -f "$HEALTHCHECK_URL" > /dev/null 2>&1; then
-      log "HEALTHCHECK" "OK — сервис работает"
-    else
-      log "ERROR" "Healthcheck провалился — выполняем rollback"
-      ./run.sh rollback
-      exit 1
-    fi
-    ;;
+  log "HEALTHCHECK" "Проверка доступности $HEALTHCHECK_URL"
+  sleep 5
+
+  if curl -f "$HEALTHCHECK_URL" > /dev/null 2>&1; then
+    log "HEALTHCHECK" "OK — сервис работает"
+  else
+    log "ERROR" "Healthcheck провалился — выполняем rollback"
+    ./run.sh rollback
+    exit 1
+  fi
+  ;;
 
   rollback)
     log "ROLLBACK" "Откат на предыдущую версию"
