@@ -14,6 +14,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity(name = "users")
@@ -32,12 +33,12 @@ public class User {
     
     String password;
     
-    String role = "User";
+    String role = "USER";
 
     @CreationTimestamp
     @Column(updatable = false)
-    String createAt;
+    LocalDateTime createAt;
 
     @UpdateTimestamp
-    String updateAt;
+    LocalDateTime updateAt;
 }
