@@ -5,12 +5,15 @@ spring:
   application:
    name: CollectorService
 
+  encryption:
+    secret-key: 1234567890123456
+
   threads:
     virtual:
       enabled: true
 
   datasource:
-    url: jdbc:postgresql://localhost:5434/postgres
+    url: jdbc:postgresql://localhost:5432/postgres
     username: root
     password: root
     driver-class-name: org.postgresql.Driver
