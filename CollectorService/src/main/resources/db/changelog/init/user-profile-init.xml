@@ -19,6 +19,10 @@
                 <constraints nullable="false"/>
             </column>
 
+            <column name="wb_token" type="VARCHAR(1000)">
+                <constraints nullable="true"/>
+            </column>
+
             <column name="role" type="VARCHAR(50)" >
                 <constraints nullable="false"/>
             </column>

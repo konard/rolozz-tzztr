@@ -6,6 +6,7 @@ import com.cor.collectorservice.dto.UserResponse;
 import com.cor.collectorservice.entity.User;
 import com.cor.collectorservice.mapper.UserMapper;
 import com.cor.collectorservice.repository.UserRepository;
+import com.cor.collectorservice.util.EncryptionUtil;
 import com.cor.collectorservice.util.exception.InvalidCredentialsException;
 import com.cor.collectorservice.util.exception.UserAlreadyExistsException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +35,7 @@ public class AuthService {
     PasswordEncoder passwordEncoder;
     AuthenticationManager authenticationManager;
     SecurityContextRepository securityContextRepository;
+    EncryptionUtil encryptionUtil;
 
     @Transactional
     public UserResponse register(RegisterRequest request) {
@@ -43,6 +46,10 @@ public class AuthService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        if (StringUtils.hasText(request.getWbToken())) {
+            user.setWbToken(encryptionUtil.encrypt(request.getWbToken()));
+        }
 
         User savedUser = userRepository.save(user);
         return userMapper.toResponse(savedUser);

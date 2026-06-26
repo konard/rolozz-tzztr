@@ -5,6 +5,9 @@ spring:
   application:
    name: CollectorService
 
+  encryption:
+    secret-key: 1234567890123456
+
   threads:
     virtual:
       enabled: true

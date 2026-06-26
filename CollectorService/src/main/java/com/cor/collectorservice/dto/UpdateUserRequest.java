@@ -20,5 +20,9 @@ public class UpdateUserRequest {
     @Size(min = 6, max = 100)
     @Schema(example = "new_password123")
     String password;
+
+    @Size(max = 500)
+    @Schema(example = "wb_token_value")
+    String wbToken;
 }
 

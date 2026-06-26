@@ -5,6 +5,7 @@ import com.cor.collectorservice.dto.UserResponse;
 import com.cor.collectorservice.entity.User;
 import com.cor.collectorservice.mapper.UserMapper;
 import com.cor.collectorservice.repository.UserRepository;
+import com.cor.collectorservice.util.EncryptionUtil;
 import com.cor.collectorservice.util.exception.BadRequestException;
 import com.cor.collectorservice.util.exception.UnauthorizedAccessException;
 import com.cor.collectorservice.util.exception.UserAlreadyExistsException;
@@ -27,6 +28,7 @@ public class UserService {
     UserRepository userRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
+    EncryptionUtil encryptionUtil;
 
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser() {
@@ -36,7 +38,8 @@ public class UserService {
 
     @Transactional
     public UserResponse updateCurrentUser(UpdateUserRequest request) {
-        if (!StringUtils.hasText(request.getUsername()) && !StringUtils.hasText(request.getPassword())) {
+        if (!StringUtils.hasText(request.getUsername()) && !StringUtils.hasText(request.getPassword())
+                && !StringUtils.hasText(request.getWbToken())) {
             throw new BadRequestException("At least one field must be provided for update");
         }
 
@@ -53,6 +56,10 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
+        if (StringUtils.hasText(request.getWbToken())) {
+            user.setWbToken(encryptionUtil.encrypt(request.getWbToken()));
+        }
+
         User updatedUser = userRepository.save(user);
         return userMapper.toResponse(updatedUser);
     }
@@ -62,6 +69,19 @@ public class UserService {
         User user = getAuthenticatedUser();
         userRepository.delete(user);
         SecurityContextHolder.clearContext();
+    }
+
+    @Transactional(readOnly = true)
+    public String getDecryptedWbToken() {
+        User user = getAuthenticatedUser();
+        if (user.getWbToken() == null) {
+            return null;
+        }
+        String decryptedToken = encryptionUtil.decrypt(user.getWbToken());
+        if (decryptedToken != null && decryptedToken.startsWith("\"") && decryptedToken.endsWith("\"")) {
+            decryptedToken = decryptedToken.substring(1, decryptedToken.length() - 1);
+        }
+        return decryptedToken;
     }
 
     private User getAuthenticatedUser() {
