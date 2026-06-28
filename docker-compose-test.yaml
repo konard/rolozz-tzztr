@@ -1,0 +1,40 @@
+services:
+
+  collector:
+    build: ./CollectorService
+    container_name: collector_service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - db
+    networks:
+      - internal_network
+      - m_network
+    environment:
+      SPRING_CONFIG_LOCATION: classpath:/application-docker.yaml
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/postgres
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+  db:
+    image: postgres:17-alpine
+    container_name: wb
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    volumes:
+      - db_data_test:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - internal_network
+
+volumes:
+  db_data_test:
+
+networks:
+  internal_network:
+    internal: true
+  m_network:
+    driver: bridge

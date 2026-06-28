@@ -12,7 +12,6 @@ import com.cor.collectorservice.entity.Dimensions;
 import com.cor.collectorservice.entity.Photo;
 import com.cor.collectorservice.entity.Size;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import java.util.List;
 
