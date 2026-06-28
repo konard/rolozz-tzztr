@@ -47,6 +47,43 @@ springdoc:
     operations-sorter: method
     tags-sorter: alpha
 
+wb:
+  api:
+    content:
+      base-url: https://content-api.wildberries.ru
+      cards-path: /content/v2/get/cards/list
+      max-page-size: 100
+      connect-timeout: 5s
+      read-timeout: 10s
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      wbApiCircuitBreaker:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 10s
+  retry:
+    instances:
+      wbApiRetry:
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2.0
+
+  bulkhead:
+    instances:
+      wbApiBulkhead:
+        max-concurrent-calls: 5
+        max-wait-duration: 500ms
+  timelimiter:
+    instances:
+      wbApiTimeLimiter:
+        timeout-duration: 10s
+
 logging:
   level:
     liquibase: DEBUG

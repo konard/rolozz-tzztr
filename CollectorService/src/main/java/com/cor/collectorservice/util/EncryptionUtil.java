@@ -1,5 +1,7 @@
 package com.cor.collectorservice.util;
 
+import com.cor.collectorservice.util.exception.DecryptionException;
+import com.cor.collectorservice.util.exception.EncryptionException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +29,7 @@ public class EncryptionUtil {
             byte[] encryptedBytes = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(encryptedBytes);
         } catch (Exception e) {
-            throw new RuntimeException("Encryption failed", e);
+            throw new EncryptionException("Ошибка шифрования данных", e);
         }
     }
 
@@ -43,7 +45,7 @@ public class EncryptionUtil {
             byte[] decryptedBytes = cipher.doFinal(decodedBytes);
             return new String(decryptedBytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new RuntimeException("Decryption failed", e);
+            throw new DecryptionException("Ошибка расшифровки данных", e);
         }
     }
 }

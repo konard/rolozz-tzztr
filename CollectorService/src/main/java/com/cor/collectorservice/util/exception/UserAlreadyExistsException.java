@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 public class UserAlreadyExistsException extends BaseException {
 
     public UserAlreadyExistsException(String username) {
-        super("Username already exists: " + username, HttpStatus.CONFLICT);
+        super("Пользователь с именем уже существует: " + username, HttpStatus.CONFLICT);
     }
 }
 

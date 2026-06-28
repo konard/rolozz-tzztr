@@ -1,7 +1,7 @@
 package com.cor.collectorservice.controller;
 
-import com.cor.collectorservice.dto.UpdateUserRequest;
-import com.cor.collectorservice.dto.UserResponse;
+import com.cor.collectorservice.dto.auth.UpdateUserRequest;
+import com.cor.collectorservice.dto.auth.UserResponse;
 import com.cor.collectorservice.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -34,14 +36,20 @@ public class UserController {
     @PreAuthorize("hasRole('USER')")
     @Operation(summary = "Получить данные текущего пользователя")
     public UserResponse getCurrentUser() {
-        return userService.getCurrentUser();
+        log.info("GET запрос на получение данных текущего пользователя");
+        UserResponse response = userService.getCurrentUser();
+        log.info("Данные пользователя успешно отправлены: {}", response.getUsername());
+        return response;
     }
 
     @PutMapping("/me")
     @PreAuthorize("hasRole('USER')")
     @Operation(summary = "Обновить данные текущего пользователя")
     public UserResponse updateCurrentUser(@Valid @RequestBody UpdateUserRequest request) {
-        return userService.updateCurrentUser(request);
+        log.info("PUT запрос на обновление данных текущего пользователя");
+        UserResponse response = userService.updateCurrentUser(request);
+        log.info("Данные пользователя успешно обновлены: {}", response.getUsername());
+        return response;
     }
 
     @DeleteMapping("/me")
@@ -49,7 +57,9 @@ public class UserController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Удалить текущего пользователя")
     public void deleteCurrentUser() {
+        log.info("DELETE запрос на удаление текущего пользователя");
         userService.deleteCurrentUser();
+        log.info("Текущий пользователь успешно удален");
     }
     
 }

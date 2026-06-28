@@ -1,4 +1,4 @@
-package com.cor.collectorservice.dto;
+package com.cor.collectorservice.dto.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;

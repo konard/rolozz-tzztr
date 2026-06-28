@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 public class UnauthorizedAccessException extends BaseException {
 
     public UnauthorizedAccessException() {
-        super("Authentication required", HttpStatus.UNAUTHORIZED);
+        super("Требуется аутентификация", HttpStatus.UNAUTHORIZED);
     }
 
     public UnauthorizedAccessException(String message) {

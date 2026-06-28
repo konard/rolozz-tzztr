@@ -3,6 +3,9 @@ plugins {
     id 'org.springframework.boot' version '3.5.15'
     id 'io.spring.dependency-management' version '1.1.7'
 }
+ext {
+    springCloudVersion = "2025.0.3"
+}
 
 group = 'com.cor'
 version = '0.0.1-SNAPSHOT'
@@ -22,8 +25,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5'
     implementation 'org.liquibase:liquibase-core'
+    implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
@@ -36,6 +41,11 @@ dependencies {
     implementation group: 'org.mapstruct', name: 'mapstruct-processor', version: '1.5.5.Final'
     implementation group: 'org.projectlombok', name: 'lombok-mapstruct-binding', version: '0.2.0'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+}
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion"
+    }
 }
 
 tasks.named('test') {

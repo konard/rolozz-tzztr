@@ -37,4 +37,22 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="2026-06-28-add-user-id-to-wb-card" author="system">
+        <addColumn tableName="wb_card">
+            <column name="user_id" type="UUID">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026-06-28-add-foreign-key-user-card" author="system">
+        <addForeignKeyConstraint
+                baseTableName="wb_card"
+                baseColumnNames="user_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_wb_card_user"
+                onDelete="CASCADE"/>
+    </changeSet>
+
 </databaseChangeLog>

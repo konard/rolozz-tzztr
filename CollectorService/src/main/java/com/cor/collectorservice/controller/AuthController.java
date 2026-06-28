@@ -1,8 +1,8 @@
 package com.cor.collectorservice.controller;
 
-import com.cor.collectorservice.dto.LoginRequest;
-import com.cor.collectorservice.dto.RegisterRequest;
-import com.cor.collectorservice.dto.UserResponse;
+import com.cor.collectorservice.dto.auth.LoginRequest;
+import com.cor.collectorservice.dto.auth.RegisterRequest;
+import com.cor.collectorservice.dto.auth.UserResponse;
 import com.cor.collectorservice.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -32,7 +34,10 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Регистрация нового пользователя")
     public UserResponse register(@Valid @RequestBody RegisterRequest request) {
-        return authService.register(request);
+        log.info("POST запрос на регистрацию пользователя: {}", request.getUsername());
+        UserResponse response = authService.register(request);
+        log.info("Пользователь успешно зарегистрирован: {}", response.getUsername());
+        return response;
     }
 
     @PostMapping("/login")
@@ -42,6 +47,9 @@ public class AuthController {
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse
     ) {
-        return authService.login(request, httpRequest, httpResponse);
+        log.info("POST запрос на вход пользователя: {}", request.getUsername());
+        UserResponse response = authService.login(request, httpRequest, httpResponse);
+        log.info("Пользователь успешно вошел в систему: {}", response.getUsername());
+        return response;
     }
 }

@@ -1,6 +1,6 @@
 package com.cor.collectorservice.mapper;
 
-import com.cor.collectorservice.dto.UserResponse;
+import com.cor.collectorservice.dto.auth.UserResponse;
 import com.cor.collectorservice.entity.User;
 import org.mapstruct.Mapper;
 

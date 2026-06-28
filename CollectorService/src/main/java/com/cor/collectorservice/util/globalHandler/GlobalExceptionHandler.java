@@ -1,6 +1,6 @@
 package com.cor.collectorservice.util.globalHandler;
 
-import com.cor.collectorservice.dto.ErrorResponse;
+import com.cor.collectorservice.dto.auth.ErrorResponse;
 import com.cor.collectorservice.util.exception.BaseException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ErrorResponse> handleBaseException(BaseException ex, HttpServletRequest request) {
-        log.warn("Business exception: {}", ex.getMessage());
+        log.warn("Бизнес-исключение: {} | Путь: {}", ex.getMessage(), request.getRequestURI());
         return buildResponse(ex.getStatus(), ex.getStatus().getReasonPhrase(), ex.getMessage(), request.getRequestURI());
     }
 
@@ -34,36 +34,39 @@ public class GlobalExceptionHandler {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
+        log.warn("Ошибка валидации: {} | Путь: {}", message, request.getRequestURI());
         return buildResponse(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), message, request.getRequestURI());
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
+        log.warn("Неверные учетные данные | Путь: {}", request.getRequestURI());
         return buildResponse(
                 HttpStatus.UNAUTHORIZED,
                 HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-                "Invalid username or password",
+                "Неверное имя пользователя или пароль",
                 request.getRequestURI()
         );
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("Доступ запрещен | Путь: {}", request.getRequestURI());
         return buildResponse(
                 HttpStatus.FORBIDDEN,
                 HttpStatus.FORBIDDEN.getReasonPhrase(),
-                "Access denied",
+                "Доступ запрещен",
                 request.getRequestURI()
         );
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
-        log.error("Unexpected error", ex);
+        log.error("Непредвиденная ошибка на сервере | Путь: {} | Ошибка: {}", request.getRequestURI(), ex.getMessage(), ex);
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "Internal server error",
+                "Внутренняя ошибка сервера",
                 request.getRequestURI()
         );
     }
