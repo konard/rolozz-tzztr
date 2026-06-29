@@ -2,6 +2,9 @@ package com.cor.collectorservice.util.globalHandler;
 
 import com.cor.collectorservice.dto.auth.ErrorResponse;
 import com.cor.collectorservice.util.exception.BaseException;
+import com.cor.collectorservice.util.exception.WbApiException;
+import com.cor.collectorservice.util.exception.WbRateLimitException;
+import com.cor.collectorservice.util.exception.WbSyncException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -56,6 +59,39 @@ public class GlobalExceptionHandler {
                 HttpStatus.FORBIDDEN,
                 HttpStatus.FORBIDDEN.getReasonPhrase(),
                 "Доступ запрещен",
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(WbRateLimitException.class)
+    public ResponseEntity<ErrorResponse> handleWbRateLimit(WbRateLimitException ex, HttpServletRequest request) {
+        log.warn("Превышен лимит запросов к WB API | Путь: {}", request.getRequestURI());
+        return buildResponse(
+                HttpStatus.TOO_MANY_REQUESTS,
+                HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(WbApiException.class)
+    public ResponseEntity<ErrorResponse> handleWbApi(WbApiException ex, HttpServletRequest request) {
+        log.error("Ошибка WB API | Путь: {} | Ошибка: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(
+                HttpStatus.BAD_GATEWAY,
+                HttpStatus.BAD_GATEWAY.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(WbSyncException.class)
+    public ResponseEntity<ErrorResponse> handleWbSync(WbSyncException ex, HttpServletRequest request) {
+        log.error("Ошибка синхронизации с WB API | Путь: {} | Ошибка: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+                ex.getMessage(),
                 request.getRequestURI()
         );
     }

@@ -10,6 +10,7 @@ import com.cor.collectorservice.mapper.CardMapper;
 import com.cor.collectorservice.repository.CardRepository;
 import com.cor.collectorservice.util.exception.BadRequestException;
 import com.cor.collectorservice.util.exception.UnauthorizedAccessException;
+import com.cor.collectorservice.util.exception.WbSyncException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -116,14 +117,12 @@ public class CardService {
                     .map(cardRequest -> {
                         Card card = existingCardsMap.get(cardRequest.getNmID());
                         if (card != null) {
-                            // Обновляем существующую карточку, сохраняя customArticle
                             String customArticle = card.getCustomArticle();
                             card = cardMapper.toEntity(cardRequest);
                             card.setUser(user);
-                            card.setCustomArticle(customArticle); // Сохраняем кастомный артикул
+                            card.setCustomArticle(customArticle);
                             log.debug("Обновлена карточка с nmID: {}", card.getNmID());
                         } else {
-                            // Создаем новую
                             card = cardMapper.toEntity(cardRequest);
                             card.setUser(user);
                             log.debug("Добавлена новая карточка с nmID: {}", card.getNmID());
@@ -141,7 +140,7 @@ public class CardService {
 
         } catch (Exception e) {
             log.error("Ошибка синхронизации карточек с WB API: {}", e.getMessage(), e);
-            throw new RuntimeException("Не удалось синхронизировать карточки с Wildberries: " + e.getMessage(), e);
+            throw new WbSyncException("Не удалось синхронизировать карточки с Wildberries: " + e.getMessage(), e);
         }
     }
 

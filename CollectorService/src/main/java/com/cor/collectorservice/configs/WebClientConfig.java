@@ -53,14 +53,14 @@ public class WebClientConfig {
 
     private ExchangeFilterFunction logRequest() {
         return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
-            log.debug("WB API Request: {} {}", clientRequest.method(), clientRequest.url());
+            log.debug("Запрос к WB API: {} {}", clientRequest.method(), clientRequest.url());
             return Mono.just(clientRequest);
         });
     }
 
     private ExchangeFilterFunction logResponse() {
         return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
-            log.debug("WB API Response status: {}", clientResponse.statusCode());
+            log.debug("Статус ответа WB API: {}", clientResponse.statusCode());
             return Mono.just(clientResponse);
         });
     }
