@@ -1,93 +1,104 @@
+# Настройки встроенного сервера Tomcat
 server:
-  port: 8082
+  port: 8082  # Порт, на котором будет запущено приложение
 
+# Основные настройки Spring Framework
 spring:
   application:
-   name: CollectorService
+   name: CollectorService  # Имя микросервиса для регистрации в сервис-дискавери
 
+  # Настройки шифрования (кастомная конфигурация)
   encryption:
-    secret-key: 1234567890123456
+    secret-key: 1234567890123456  # Секретный ключ для шифрования данных (16 байт для AES-128)
 
+  # Настройки виртуальных потоков (Project Loom / Java 21+)
   threads:
     virtual:
-      enabled: true
+      enabled: true  # Включение виртуальных потоков для улучшения производительности I/O операций
 
+  # Настройки источника данных (база данных)
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: root
-    password: root
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 5
-      minimum-idle: 1
-      connection-timeout: 3000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+    url: jdbc:postgresql://localhost:5432/postgres  # JDBC URL для подключения к PostgreSQL
+    username: root  # Имя пользователя базы данных
+    password: root  # Пароль пользователя базы данных
+    driver-class-name: org.postgresql.Driver  # JDBC драйвер PostgreSQL
+    hikari:  # Настройки пула соединений HikariCP
+      maximum-pool-size: 5  # Максимальное количество соединений в пуле
+      minimum-idle: 1  # Минимальное количество простаивающих соединений
+      connection-timeout: 3000  # Таймаут получения соединения из пула (в миллисекундах)
+      idle-timeout: 600000  # Время простоя соединения перед закрытием (10 минут)
+      max-lifetime: 1800000  # Максимальное время жизни соединения (30 минут)
 
+  # Настройки JPA (Java Persistence API) и Hibernate
   jpa:
     hibernate:
-      ddl-auto: none
-    show-sql: true
+      ddl-auto: none  # Стратегия управления схемой БД: none - без автоматических изменений
+    show-sql: true  # Вывод SQL-запросов в консоль
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect  # Диалект SQL для PostgreSQL
+        format_sql: true  # Форматирование SQL-запросов для лучшей читаемости
 
+  # Настройки Liquibase - инструмента миграции базы данных
   liquibase:
-    enabled: true
-    change-log: classpath:/db/changelog/db.changelog-master.yaml
-    drop-first: false
+    enabled: true  # Включение Liquibase
+    change-log: classpath:/db/changelog/db.changelog-master.yaml  # Путь к главному файлу миграций
+    drop-first: false  # Не удалять схему перед применением миграций
 
 
+# Настройки SpringDoc OpenAPI для документации API
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /api-docs  # Путь к JSON документации OpenAPI
   swagger-ui:
-    path: /swagger-ui.html
-    operations-sorter: method
-    tags-sorter: alpha
+    path: /swagger-ui.html  # Путь к веб-интерфейсу Swagger UI
+    operations-sorter: method  # Сортировка методов по HTTP методу (GET, POST и т.д.)
+    tags-sorter: alpha  # Сортировка тегов по алфавиту
 
+# Кастомные настройки для интеграции с Wildberries API
 wb:
   api:
     content:
-      base-url: https://content-api.wildberries.ru
-      cards-path: /content/v2/get/cards/list
-      max-page-size: 100
-      connect-timeout: 5s
-      read-timeout: 10s
+      base-url: https://content-api.wildberries.ru  # Базовый URL API контента Wildberries
+      cards-path: /content/v2/get/cards/list  # Путь к эндпоинту получения карточек товаров
+      max-page-size: 100  # Максимальный размер страницы при пагинации
+      connect-timeout: 5s  # Таймаут соединения (5 секунд)
+      read-timeout: 10s  # Таймаут чтения данных (10 секунд)
 
+# Настройки Resilience4j - библиотеки для реализации паттернов отказоустойчивости
 resilience4j:
-  circuitbreaker:
+  circuitbreaker:  # Circuit Breaker - предохранитель для разрыва цепи при ошибках
     instances:
-      wbApiCircuitBreaker:
-        sliding-window-size: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 60s
-        permitted-number-of-calls-in-half-open-state: 3
-        automatic-transition-from-open-to-half-open-enabled: true
-        slow-call-rate-threshold: 50
-        slow-call-duration-threshold: 10s
-  retry:
+      wbApiCircuitBreaker:  # Имя экземпляра предохранителя для WB API
+        sliding-window-size: 10  # Размер скользящего окна для статистики вызовов
+        failure-rate-threshold: 50  # Порог процентного отношения неудачных вызовов для открытия цепи (50%)
+        wait-duration-in-open-state: 60s  # Время ожидания в открытом состоянии (60 секунд)
+        permitted-number-of-calls-in-half-open-state: 3  # Разрешенное количество вызовов в полуоткрытом состоянии
+        automatic-transition-from-open-to-half-open-enabled: true  # Автоматический переход в полуоткрытое состояние
+        slow-call-rate-threshold: 50  # Порог медленных вызовов для открытия цепи (50%)
+        slow-call-duration-threshold: 10s  # Порог длительности медленного вызова (10 секунд)
+  retry:  # Retry - механизм повторных попыток
     instances:
-      wbApiRetry:
-        max-attempts: 3
-        wait-duration: 1s
-        exponential-backoff-multiplier: 2.0
+      wbApiRetry:  # Имя экземпляра ретраера для WB API
+        max-attempts: 3  # Максимальное количество попыток выполнения запроса
+        wait-duration: 1s  # Время ожидания между попытками (1 секунда)
+        exponential-backoff-multiplier: 2.0  # Множитель для экспоненциальной задержки
 
-  bulkhead:
+  bulkhead:  # Bulkhead - ограничение количества одновременных вызовов
     instances:
-      wbApiBulkhead:
-        max-concurrent-calls: 5
-        max-wait-duration: 500ms
-  timelimiter:
+      wbApiBulkhead:  # Имя экземпляра булхеда для WB API
+        max-concurrent-calls: 5  # Максимальное количество одновременных вызовов
+        max-wait-duration: 500ms  # Максимальное время ожидания в очереди (500 миллисекунд)
+  timelimiter:  # Time Limiter - ограничение времени выполнения
     instances:
-      wbApiTimeLimiter:
-        timeout-duration: 10s
+      wbApiTimeLimiter:  # Имя экземпляра лимитера времени для WB API
+        timeout-duration: 10s  # Максимальное время выполнения (10 секунд)
 
+# Настройки логирования
 logging:
   level:
-    liquibase: DEBUG
-    org.springframework.jdbc.core: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.springframework.cloud.vault: DEBUG
-    root: debug
+    liquibase: DEBUG  # Уровень логирования для Liquibase
+    org.springframework.jdbc.core: DEBUG  # Уровень логирования для JDBC Spring
+    org.hibernate.SQL: DEBUG  # Уровень логирования для SQL запросов Hibernate
+    org.springframework.cloud.vault: DEBUG  # Уровень логирования для Spring Cloud Vault
+    root: debug  # Корневой уровень логирования

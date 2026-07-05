@@ -32,17 +32,6 @@ public class CardController {
 
     CardService cardService;
 
-
-    @GetMapping("/sync")
-    @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "Получить все карточки текущего пользователя (с синхронизацией с WB API)")
-    public List<CardResponse> syncCards() {
-        log.info("GET запрос на получение всех карточек с синхронизацией");
-        List<CardResponse> cards = cardService.syncAndGetCards();
-        log.info("Отправлено {} карточек", cards.size());
-        return cards;
-    }
-
     @GetMapping("current")
     @PreAuthorize("hasRole('USER')")
     @Operation(summary = "Получить все карточки текущего пользователя")
