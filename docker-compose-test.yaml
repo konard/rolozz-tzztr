@@ -30,9 +30,6 @@ services:
     networks:
       - internal_network
   
-networks:
-  - internal_network
-  - m_networ
 volumes:
   db_data_test:
 
