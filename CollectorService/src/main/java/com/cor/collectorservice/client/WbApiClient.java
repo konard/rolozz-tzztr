@@ -4,6 +4,7 @@ import com.cor.collectorservice.dto.card.CardRequest;
 import com.cor.collectorservice.dto.wb.WbCardsResponse;
 import com.cor.collectorservice.util.exception.WbApiException;
 import com.cor.collectorservice.util.exception.WbRateLimitException;
+import com.cor.collectorservice.util.rate.TokenBucketRateLimiter;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 @Slf4j
 @Component
@@ -29,6 +31,12 @@ import java.util.Map;
 public class WbApiClient {
 
     private final WebClient wbWebClient;
+
+    // Общий для всех пользователей лимит: 100 запросов/минуту к WB API
+    private final TokenBucketRateLimiter rateLimiter;
+
+    // Единая очередь: пока идёт загрузка для одного пользователя, остальные ждут
+    private final Semaphore wbApiSemaphore;
 
     @Value("${wb.api.content.cards-path}")
     private String cardsPath;
@@ -95,6 +103,16 @@ public class WbApiClient {
         log.info("Начало получения всех карточек из Wildberries API");
         long startTime = System.currentTimeMillis();
 
+        acquireQueueSlot();
+        try {
+            return fetchAllCardsInternal(token, startTime);
+        } finally {
+            wbApiSemaphore.release();
+            log.debug("Слот очереди освобождён. Свободных слотов: {}", wbApiSemaphore.availablePermits());
+        }
+    }
+
+    private List<CardRequest> fetchAllCardsInternal(String token, long startTime) {
         List<CardRequest> allCards = new ArrayList<>();
         int skip = 0;
         int pageCount = 0;
@@ -103,6 +121,10 @@ public class WbApiClient {
             while (true) {
                 pageCount++;
                 log.debug("Получение страницы {} с пропуском: {}", pageCount, skip);
+
+                // Единый лимит 100 запросов/минуту для всех пользователей.
+                // Если токенов нет — поток ждёт (не бросаем исключение).
+                rateLimiter.acquire();
 
                 WbCardsResponse response = fetchCardsPage(token, skip);
 
@@ -119,7 +141,6 @@ public class WbApiClient {
                 }
 
                 skip += maxPageSize;
-                sleepBetweenRequests();
             }
 
             log.info("Успешно получено {} карточек из WB API за {} страниц ({} мс)",
@@ -129,6 +150,23 @@ public class WbApiClient {
         } catch (Exception e) {
             log.error("Ошибка при получении карточек из WB API: {}", e.getMessage(), e);
             throw new WbApiException("Не удалось получить карточки из Wildberries API", e);
+        }
+    }
+
+    /**
+     * Встаёт в общую очередь на выполнение запросов к WB API.
+     * Пока для одного пользователя выполняется загрузка карточек,
+     * остальные ожидают освобождения слота.
+     */
+    private void acquireQueueSlot() {
+        try {
+            log.debug("Ожидание слота в очереди WB API. Свободных слотов: {}, ожидающих: {}",
+                    wbApiSemaphore.availablePermits(), wbApiSemaphore.getQueueLength());
+            wbApiSemaphore.acquire();
+            log.debug("Слот очереди получен, начинаем загрузку карточек");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new WbApiException("Ожидание в очереди на получение карточек было прервано", e);
         }
     }
 
@@ -155,14 +193,5 @@ public class WbApiClient {
         }
 
         return false;
-    }
-
-    private void sleepBetweenRequests() {
-        try {
-            Thread.sleep(600);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Сон прерван", e);
-        }
     }
 }

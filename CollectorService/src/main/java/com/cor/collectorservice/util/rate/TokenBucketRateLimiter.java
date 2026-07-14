@@ -23,6 +23,9 @@ public class TokenBucketRateLimiter {
     // 100 токенов в минуту = 100/60 ≈ 1.67 токена в секунду
     private final double refillRate = 100.0 / 60.0;
 
+    // Минимальное время сна между попытками получить токен в блокирующем режиме (мс)
+    private static final long MIN_WAIT_MILLIS = 50;
+
     // Текущее количество токенов в ведре
     private final AtomicLong tokens = new AtomicLong(capacity);
 
@@ -31,6 +34,51 @@ public class TokenBucketRateLimiter {
 
     // Блокировка для атомарных операций пополнения
     private final ReentrantLock lock = new ReentrantLock();
+
+    /**
+     * Блокирующее получение одного токена.
+     * Если токенов нет, поток ожидает (встаёт в очередь) до тех пор,
+     * пока токен не станет доступен. Используется для единого лимита
+     * 100 запросов/минуту, общего для всех пользователей приложения.
+     */
+    public void acquire() {
+        acquire(1);
+    }
+
+    /**
+     * Блокирующее получение указанного количества токенов.
+     * В отличие от {@link #tryAcquire(int)}, метод не бросает исключение,
+     * а ожидает пополнения ведра, тем самым выстраивая запросы в очередь.
+     * @param tokenCount количество токенов
+     */
+    public void acquire(int tokenCount) {
+        while (true) {
+            long waitTimeMs;
+            lock.lock();
+            try {
+                refill();
+
+                if (tokens.get() >= tokenCount) {
+                    tokens.addAndGet(-tokenCount);
+                    log.debug("Токен получен (блокирующий режим). Осталось токенов: {}/{}", tokens.get(), capacity);
+                    return;
+                }
+
+                waitTimeMs = calculateWaitTime(tokenCount);
+                log.debug("Токены недоступны, ожидание {} мс. Нужно: {}, Доступно: {}",
+                        waitTimeMs, tokenCount, tokens.get());
+            } finally {
+                lock.unlock();
+            }
+
+            try {
+                Thread.sleep(Math.max(waitTimeMs, MIN_WAIT_MILLIS));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RateLimitExceededException("Ожидание освобождения токена было прервано", e);
+            }
+        }
+    }
 
     /**
      * Пытается получить токен для выполнения запроса
