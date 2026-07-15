@@ -9,10 +9,22 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.concurrent.Semaphore;
+
 @Configuration
 public class AppConfig {
 
     private static final String SECURITY_SCHEME_NAME = "sessionAuth";
+
+    /**
+     * Единый семафор, гарантирующий, что запросы карточек к WB API выполняются
+     * строго по одному: пока для одного пользователя идёт загрузка, остальные
+     * встают в очередь (честный режим — FIFO). Общий для всех пользователей.
+     */
+    @Bean
+    public Semaphore wbApiSemaphore() {
+        return new Semaphore(1, true);
+    }
 
     @Bean
     public OpenAPI openAPI() {
