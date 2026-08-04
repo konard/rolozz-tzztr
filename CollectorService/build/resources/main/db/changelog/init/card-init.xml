@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="2026-06-28-create-wb-card-table" author="system">
+        <createTable tableName="wb_card">
+            <column name="nm_id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="custom_article" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="imt_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="nm_uuid" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="subject_id" type="INTEGER">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="subject_name" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="vendor_code" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="brand" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="title" type="VARCHAR(1000)">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="description" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="video" type="VARCHAR(1000)">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="need_kiz" type="BOOLEAN">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="kiz_marked" type="BOOLEAN">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="dimensions" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="photos" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="characteristics" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="sizes" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

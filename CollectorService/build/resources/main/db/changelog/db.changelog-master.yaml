@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: classpath:db/changelog/init/card-init.xml
+  - include:
+      file: classpath:db/changelog/init/user-profile-init.xml
