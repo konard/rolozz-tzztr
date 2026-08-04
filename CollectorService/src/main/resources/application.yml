@@ -100,5 +100,4 @@ logging:
     liquibase: DEBUG  # Уровень логирования для Liquibase
     org.springframework.jdbc.core: DEBUG  # Уровень логирования для JDBC Spring
     org.hibernate.SQL: DEBUG  # Уровень логирования для SQL запросов Hibernate
-    org.springframework.cloud.vault: DEBUG  # Уровень логирования для Spring Cloud Vault
     root: debug  # Корневой уровень логирования
