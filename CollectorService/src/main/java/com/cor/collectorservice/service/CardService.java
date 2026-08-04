@@ -1,5 +1,7 @@
 package com.cor.collectorservice.service;
 
+import com.cor.collectorservice.client.WbApiClient;
+import com.cor.collectorservice.dto.card.CardRequest;
 import com.cor.collectorservice.dto.card.CardResponse;
 import com.cor.collectorservice.dto.card.UpdateCustomArticleRequest;
 import com.cor.collectorservice.entity.Card;
@@ -28,16 +30,55 @@ public class CardService {
     CardRepository cardRepository;
     CardMapper cardMapper;
     UserService userService;
+    WbApiClient wbApiClient;
 
-    @Transactional(readOnly = true)
+    /**
+     * Возвращает карточки текущего пользователя.
+     * Логика получения: всегда сначала из БД, и только если там пусто —
+     * подтягиваем из WB API (через общий лимит запросов), сохраняем в БД и отдаём.
+     */
+    @Transactional
     public List<CardResponse> getCurrentUserCards() {
         log.info("Получение карточек текущего пользователя");
         User user = getAuthenticatedUser();
+
         List<Card> cards = cardRepository.findByUser(user);
+        if (cards.isEmpty()) {
+            log.info("Карточки пользователя {} отсутствуют в БД, загрузка из WB API", user.getUsername());
+            cards = fetchAndStoreCardsFromApi(user);
+        }
+
         log.info("Найдено {} карточек для пользователя: {}", cards.size(), user.getUsername());
         return cards.stream()
                 .map(cardMapper::toResponse)
                 .toList();
+    }
+
+    /**
+     * Загружает карточки из WB API (под единым лимитом 100 запросов/минуту и
+     * общей очередью для всех пользователей), сохраняет их в БД и возвращает.
+     */
+    private List<Card> fetchAndStoreCardsFromApi(User user) {
+        String token = userService.getDecryptedWbToken();
+        if (token == null || token.isBlank()) {
+            log.warn("WB-токен не установлен для пользователя: {}", user.getUsername());
+            throw new BadRequestException("WB-токен не установлен. Укажите токен в профиле");
+        }
+
+        List<CardRequest> apiCards = wbApiClient.fetchAllCards(token);
+        if (apiCards.isEmpty()) {
+            log.info("WB API не вернул карточек для пользователя: {}", user.getUsername());
+            return List.of();
+        }
+
+        List<Card> cards = apiCards.stream()
+                .map(cardMapper::toEntity)
+                .peek(card -> card.setUser(user))
+                .toList();
+
+        List<Card> saved = cardRepository.saveAll(cards);
+        log.info("Сохранено {} карточек из WB API для пользователя: {}", saved.size(), user.getUsername());
+        return saved;
     }
 
     @Transactional(readOnly = true)
