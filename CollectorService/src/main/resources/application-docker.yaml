@@ -73,6 +73,12 @@ resilience4j:
         max-attempts: 3
         wait-duration: 1s
         exponential-backoff-multiplier: 2.0
+      keycloakRetry:
+        max-attempts: 3
+        wait-duration: 500ms
+        exponential-backoff-multiplier: 2.0
+        retry-exceptions:
+          - com.cor.collectorservice.util.exception.KeycloakUnavailableException
 
   bulkhead:
     instances:
@@ -83,6 +89,40 @@ resilience4j:
     instances:
       wbApiTimeLimiter:
         timeout-duration: 10s
+
+keycloak:
+  realm: my-realm
+  # Внутри docker-сети Keycloak доступен по имени сервиса и внутреннему порту 8080
+  auth-server-url: http://keycloak:8080
+  client-id: authservice-client
+  client-secret: 'm#5Fhj2$8xLp9!qB6*KvE@W7nGd4%zR1'
+  default-role: USER
+  admin:
+    username: admin
+    password: admin
+    client-id: admin-cli
+    realm: master
+    connection-pool-size: 10
+  registration:
+    compensation:
+      max-attempts: 10
+      retry-interval: PT30S
+  jwt:
+    required-role: USER
+    clock-skew: PT30S
+    # Keycloak запущен с KC_HOSTNAME=localhost, поэтому в выпускаемых токенах издатель
+    # отличается от внутреннего адреса обращения. Значение должно совпадать с claim `iss`
+    # выданного токена — при смене KC_HOSTNAME его нужно поправить.
+    issuer-uri: http://localhost:8080/realms/my-realm
+    public-paths:
+      - /api/auth/**
+      - /api-docs/**
+      - /api-docs
+      - /v3/api-docs/**
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /actuator/**
+      - /error
 
 management:
   endpoints:

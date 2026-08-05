@@ -83,6 +83,12 @@ resilience4j:
         max-attempts: 3  # Максимальное количество попыток выполнения запроса
         wait-duration: 1s  # Время ожидания между попытками (1 секунда)
         exponential-backoff-multiplier: 2.0  # Множитель для экспоненциальной задержки
+      keycloakRetry:  # Повторные попытки обращения к Keycloak (создание, обновление, удаление пользователей)
+        max-attempts: 3  # Максимальное количество попыток обращения к Keycloak
+        wait-duration: 500ms  # Время ожидания между попытками
+        exponential-backoff-multiplier: 2.0  # Множитель для экспоненциальной задержки
+        retry-exceptions:  # Повторяем только временные сбои: недоступность Keycloak
+          - com.cor.collectorservice.util.exception.KeycloakUnavailableException
 
   bulkhead:  # Bulkhead - ограничение количества одновременных вызовов
     instances:
@@ -94,16 +100,35 @@ resilience4j:
       wbApiTimeLimiter:  # Имя экземпляра лимитера времени для WB API
         timeout-duration: 10s  # Максимальное время выполнения (10 секунд)
 
+# Настройки интеграции с Keycloak: аутентификация и управление учётными записями
 keycloak:
-  realm: my-realm
-  auth-server-url: http://localhost:8095
-  client-id: authservice-client
-  client-secret: m#5Fhj2$8xLp9!qB6*KvE@W7nGd4%zR1
-  admin:
-    username: admin
-    password: admin
-    client-id: admin-cli
-    realm: master
+  realm: my-realm  # Realm, в котором заведены пользователи сервиса
+  auth-server-url: http://localhost:8095  # Базовый URL Keycloak без завершающего слэша
+  client-id: authservice-client  # Конфиденциальный клиент, от имени которого выполняется вход
+  client-secret: 'm#5Fhj2$8xLp9!qB6*KvE@W7nGd4%zR1'  # Секрет клиента (кавычки обязательны из-за спецсимволов)
+  default-role: USER  # Realm-роль, назначаемая пользователю сразу после регистрации
+  admin:  # Сервисная учётная запись для Admin REST API
+    username: admin  # Логин администратора Keycloak
+    password: admin  # Пароль администратора Keycloak
+    client-id: admin-cli  # Клиент административного доступа
+    realm: master  # Realm, в котором заведён администратор
+    connection-pool-size: 10  # Размер пула HTTP-соединений административного клиента
+  registration:  # Настройки саги регистрации
+    compensation:  # Откат записи в Keycloak, если профиль не сохранился в БД
+      max-attempts: 10  # Максимальное число фоновых попыток удаления «осиротевшей» учётной записи
+      retry-interval: PT30S  # Интервал между запусками фонового обработчика очереди (формат ISO-8601)
+  jwt:  # Проверка входящих access-токенов
+    required-role: USER  # Роль по умолчанию для аннотации @RequiresRole
+    clock-skew: PT30S  # Допустимое расхождение часов с Keycloak при проверке exp/nbf
+    public-paths:  # Пути, доступные без токена (Ant-шаблоны)
+      - /api/auth/**
+      - /api-docs/**
+      - /api-docs
+      - /v3/api-docs/**
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /actuator/**
+      - /error
 
 # Настройки логирования
 logging:
