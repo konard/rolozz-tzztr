@@ -30,7 +30,6 @@ import java.util.UUID;
 public class User {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
     
     String username;
