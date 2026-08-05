@@ -41,6 +41,8 @@ public class User {
     
     String role = "USER";
 
+    Boolean isVerified;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Card> cards = new ArrayList<>();
 

@@ -21,6 +21,9 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="ApiGateway" options="-parameters" />
+      <module name="ApiGateway.main" options="-parameters" />
+      <module name="ApiGateway.test" options="-parameters" />
       <module name="CollectorService" options="-parameters" />
       <module name="CollectorService.main" options="-parameters" />
       <module name="CollectorService.test" options="-parameters" />

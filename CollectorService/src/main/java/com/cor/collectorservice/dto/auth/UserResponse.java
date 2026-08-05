@@ -24,6 +24,9 @@ public class UserResponse {
     @Schema(example = "User")
     String role;
 
+    @Schema(example = "true")
+    Boolean isVerified;
+
     @Schema(example = "2026-06-25T12:00:00")
     LocalDateTime createAt;
 
