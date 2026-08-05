@@ -7,6 +7,8 @@ import com.cor.collectorservice.entity.Card;
 import com.cor.collectorservice.entity.User;
 import com.cor.collectorservice.mapper.CardMapper;
 import com.cor.collectorservice.repository.CardRepository;
+import com.cor.collectorservice.util.context.UserContext;
+import com.cor.collectorservice.util.context.UserContextHolder;
 import com.cor.collectorservice.util.exception.BadRequestException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,10 +18,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +30,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Тесты сервиса карточек.
+ * <p>
+ * Контекст пользователя после отказа от Spring Security задаётся через
+ * {@link UserContextHolder} — так же, как это делает
+ * {@link com.cor.collectorservice.filter.JwtAuthenticationFilter} после проверки JWT.
+ */
 @ExtendWith(MockitoExtension.class)
 class CardServiceTest {
 
@@ -52,14 +60,13 @@ class CardServiceTest {
         user.setId(UUID.randomUUID());
         user.setUsername("tester");
 
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("tester", "password", List.of()));
+        UserContextHolder.set(new UserContext(user.getId(), "tester", "tester@example.com", Set.of("USER")));
         when(userService.getAuthenticatedUser()).thenReturn(user);
     }
 
     @AfterEach
     void tearDown() {
-        SecurityContextHolder.clearContext();
+        UserContextHolder.clear();
     }
 
     @Test
