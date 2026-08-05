@@ -86,19 +86,35 @@ class RegistrationCompensationServiceTest {
         doThrow(new KeycloakUnavailableException("Keycloak недоступен"))
                 .when(keycloakAdminClient).deleteUser(userId);
 
+        // Попытка 1 — немедленная, выполняется прямо в compensate
         compensationService.compensate(userId, USERNAME);
-
-        // Попытки 2 и 3 при лимите 3: задача остаётся в очереди
-        compensationService.retryPendingDeletions();
-        assertThat(compensationService.pendingCount()).isEqualTo(1);
-        compensationService.retryPendingDeletions();
         assertThat(compensationService.pendingCount()).isEqualTo(1);
 
-        // Четвёртая попытка превышает лимит: задача снимается с повторов
+        // Попытка 2 из 3: лимит ещё не исчерпан, задача остаётся в очереди
+        compensationService.retryPendingDeletions();
+        assertThat(compensationService.pendingCount()).isEqualTo(1);
+
+        // Попытка 3 из 3: лимит исчерпан, задача снимается с повторов
         compensationService.retryPendingDeletions();
         assertThat(compensationService.pendingCount()).isZero();
 
-        verify(keycloakAdminClient, times(4)).deleteUser(userId);
+        // Следующий проход планировщика уже не трогает Keycloak
+        compensationService.retryPendingDeletions();
+
+        verify(keycloakAdminClient, times(3)).deleteUser(userId);
+    }
+
+    @Test
+    @DisplayName("При max-attempts=1 повторов нет: задача в очередь не попадает")
+    void doesNotQueueRetryWhenRetriesAreDisabled() {
+        properties.getRegistration().getCompensation().setMaxAttempts(1);
+        doThrow(new KeycloakUnavailableException("Keycloak недоступен"))
+                .when(keycloakAdminClient).deleteUser(userId);
+
+        compensationService.compensate(userId, USERNAME);
+
+        assertThat(compensationService.pendingCount()).isZero();
+        verify(keycloakAdminClient, times(1)).deleteUser(userId);
     }
 
     @Test

@@ -25,8 +25,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *     <li>{@link #compensate(UUID, String)} пытается удалить учётную запись немедленно
  *         (с повторными попытками resilience4j внутри {@link KeycloakAdminClient});</li>
  *     <li>если Keycloak недоступен, задача попадает в очередь;</li>
- *     <li>{@link #retryPendingDeletions()} по расписанию повторяет удаление до
- *         {@code keycloak.registration.compensation.max-attempts} раз.</li>
+ *     <li>{@link #retryPendingDeletions()} по расписанию повторяет удаление, пока общее число
+ *         попыток (считая немедленную) не достигнет
+ *         {@code keycloak.registration.compensation.max-attempts}.</li>
  * </ol>
  * Очередь хранится в памяти: запись в базу здесь неуместна, поскольку типичная причина
  * компенсации — как раз недоступность базы данных. Задачи, не выполненные до перезапуска
@@ -60,9 +61,17 @@ public class RegistrationCompensationService {
             log.info("Компенсация регистрации пользователя {} выполнена: учётная запись {} удалена",
                     username, keycloakUserId);
         } catch (RuntimeException ex) {
+            int maxAttempts = properties.getRegistration().getCompensation().getMaxAttempts();
+            if (maxAttempts <= 1) {
+                log.error("Не удалось удалить учётную запись {} пользователя {}, повторы отключены "
+                                + "(max-attempts={}). Учётная запись требует ручного удаления",
+                        keycloakUserId, username, maxAttempts, ex);
+                return;
+            }
+
             log.error("Не удалось сразу удалить учётную запись {} пользователя {}. "
-                            + "Задача поставлена в очередь фоновых повторов",
-                    keycloakUserId, username, ex);
+                            + "Задача поставлена в очередь фоновых повторов (осталось попыток: {})",
+                    keycloakUserId, username, maxAttempts - 1, ex);
             pendingDeletions.add(new PendingDeletion(keycloakUserId, username, 1));
         }
     }
@@ -85,12 +94,13 @@ public class RegistrationCompensationService {
         log.info("Повтор компенсаций регистрации: задач в очереди {}", batch.size());
 
         for (PendingDeletion task : batch) {
+            int attempt = task.attempts() + 1;
             try {
                 keycloakAdminClient.deleteUser(task.userId());
                 log.info("Компенсация регистрации пользователя {} выполнена с попытки {}: учётная запись {} удалена",
-                        task.username(), task.attempts(), task.userId());
+                        task.username(), attempt, task.userId());
             } catch (RuntimeException ex) {
-                handleFailedAttempt(task, maxAttempts, ex);
+                handleFailedAttempt(task, attempt, maxAttempts, ex);
             }
         }
     }
@@ -124,22 +134,22 @@ public class RegistrationCompensationService {
      * если лимит попыток исчерпан.
      *
      * @param task        задача компенсации
-     * @param maxAttempts максимальное число попыток
+     * @param attempt     номер только что провалившейся попытки, считая немедленную
+     * @param maxAttempts максимальное общее число попыток
      * @param ex          ошибка последней попытки
      */
-    private void handleFailedAttempt(PendingDeletion task, int maxAttempts, RuntimeException ex) {
-        int nextAttempt = task.attempts() + 1;
-
-        if (nextAttempt > maxAttempts) {
+    private void handleFailedAttempt(PendingDeletion task, int attempt, int maxAttempts, RuntimeException ex) {
+        if (attempt >= maxAttempts) {
             log.error("Компенсация регистрации пользователя {} не выполнена за {} попыток. "
                             + "Учётная запись {} осталась в Keycloak и требует ручного удаления",
-                    task.username(), task.attempts(), task.userId(), ex);
+                    task.username(), attempt, task.userId(), ex);
             return;
         }
 
-        log.warn("Попытка {} удалить учётную запись {} пользователя {} не удалась, задача возвращена в очередь",
-                task.attempts(), task.userId(), task.username(), ex);
-        pendingDeletions.add(new PendingDeletion(task.userId(), task.username(), nextAttempt));
+        log.warn("Попытка {} из {} удалить учётную запись {} пользователя {} не удалась, "
+                        + "задача возвращена в очередь",
+                attempt, maxAttempts, task.userId(), task.username(), ex);
+        pendingDeletions.add(new PendingDeletion(task.userId(), task.username(), attempt));
     }
 
     /**
