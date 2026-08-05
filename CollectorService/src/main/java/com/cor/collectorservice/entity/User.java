@@ -37,19 +37,24 @@ public class User {
     
     String password;
 
+    @Column(name = "wb_token")
     String wbToken;
     
     String role = "USER";
 
-    Boolean isVerified;
+    String email;
+
+    @Column(name = "is_verified", nullable = false)
+    Boolean isVerified = false;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Card> cards = new ArrayList<>();
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "create_at", updatable = false)
     LocalDateTime createAt;
 
     @UpdateTimestamp
+    @Column(name = "update_at")
     LocalDateTime updateAt;
 }

@@ -94,6 +94,17 @@ resilience4j:
       wbApiTimeLimiter:  # Имя экземпляра лимитера времени для WB API
         timeout-duration: 10s  # Максимальное время выполнения (10 секунд)
 
+keycloak:
+  realm: my-realm
+  auth-server-url: http://localhost:8095
+  client-id: authservice-client
+  client-secret: m#5Fhj2$8xLp9!qB6*KvE@W7nGd4%zR1
+  admin:
+    username: admin
+    password: admin
+    client-id: admin-cli
+    realm: master
+
 # Настройки логирования
 logging:
   level:

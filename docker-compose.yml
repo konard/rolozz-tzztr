@@ -1,16 +1,46 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: wb-frontend
-    env_file: .env
+
+  keycloak-db:
+    image: postgres:17-alpine
+    container_name: postgres_keycloak
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: keycloak
+    volumes:
+      - postgres_keycloak_data:/var/lib/postgresql/data
     ports:
-      - "3000:3000"
+      - "5434:5432"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2.5
+    container_name: keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db/keycloak
+      KC_DB_USERNAME: root
+      KC_DB_PASSWORD: root
+      KC_HOSTNAME: localhost
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_CLIENT_SECRET: m#5Fhj2$8xLp9!qB6*KvE@W7nGd4%zR1
+      KC_IMPORT_PATH: /opt/keycloak/data/import/
+      KC_IMPORT_FORCE: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
+      KC_LOG_LEVEL: DEBUG
+      TZ: Europe/Moscow
+    volumes:
+      - ./infrastructure/keycloak-config/:/opt/keycloak/data/import/
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    command:
+      - start-dev
+      - --import-realm
+    ports:
+      - "8095:8080"
     depends_on:
-      - db
-      - redis
-    restart: always
+      - keycloak-db
 
   db:
     image: postgres:17-alpine
@@ -34,4 +64,5 @@ services:
 
 volumes:
   db_data:
+  postgres_keycloak_data:
 

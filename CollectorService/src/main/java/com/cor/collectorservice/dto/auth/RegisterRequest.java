@@ -24,6 +24,11 @@ public class RegisterRequest {
     @Schema(example = "password123")
     String password;
 
+    @NotBlank
+    @Size(max = 500)
+    @Schema(example = "john_doe@example.com")
+    String email;
+
     @Size(max = 500)
     @Schema(example = "wb_token_value")
     String wbToken;

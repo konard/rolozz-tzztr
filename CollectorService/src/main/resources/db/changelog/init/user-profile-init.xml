@@ -15,6 +15,10 @@
                 <constraints nullable="false" unique="true"/>
             </column>
 
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
             <column name="password" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>

@@ -24,6 +24,9 @@ public class UserResponse {
     @Schema(example = "User")
     String role;
 
+    @Schema(example = "john_doe@example.com")
+    String email;
+
     @Schema(example = "true")
     Boolean isVerified;
 

@@ -1,6 +1,7 @@
 package com.cor.collectorservice.dto.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,6 +21,11 @@ public class UpdateUserRequest {
     @Size(min = 6, max = 100)
     @Schema(example = "new_password123")
     String password;
+
+    @NotBlank
+    @Size(max = 500)
+    @Schema(example = "john_doe@example.com")
+    String email;
 
     @Size(max = 500)
     @Schema(example = "wb_token_value")
