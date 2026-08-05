@@ -63,4 +63,18 @@
                 onDelete="CASCADE"/>
     </changeSet>
 
+    <!--
+        Переход на Keycloak: пароли хранятся и проверяются только в Keycloak,
+        поэтому колонка password в профиле сервиса больше не нужна.
+        Предусловие позволяет применить набор изменений и к базе,
+        в которой колонка уже отсутствует.
+    -->
+    <changeSet id="2026-08-05-drop-users-password" author="keycloak-migration">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="users" columnName="password"/>
+        </preConditions>
+        <comment>Удаление колонки password: учётные данные перенесены в Keycloak</comment>
+        <dropColumn tableName="users" columnName="password"/>
+    </changeSet>
+
 </databaseChangeLog>
