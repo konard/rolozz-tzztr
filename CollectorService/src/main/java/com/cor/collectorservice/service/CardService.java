@@ -14,8 +14,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -124,16 +122,17 @@ public class CardService {
         return cardMapper.toResponse(updatedCard);
     }
 
+    /**
+     * Возвращает профиль пользователя, от имени которого выполняется запрос.
+     * <p>
+     * Проверка аутентификации выполнена раньше — в
+     * {@link com.cor.collectorservice.filter.JwtAuthenticationFilter}, поэтому здесь
+     * достаточно взять профиль по контексту запроса.
+     *
+     * @return профиль текущего пользователя
+     * @throws UnauthorizedAccessException если запрос не аутентифицирован
+     */
     private User getAuthenticatedUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()
-                || "anonymousUser".equals(authentication.getPrincipal())) {
-            log.warn("Попытка доступа без аутентификации");
-            throw new UnauthorizedAccessException();
-        }
-
-        String username = authentication.getName();
         return userService.getAuthenticatedUser();
     }
 }
