@@ -1,6 +1,9 @@
 package com.cor.collectorservice.client;
 
 import com.cor.collectorservice.configs.KeycloakProperties;
+import com.cor.collectorservice.util.exception.KeycloakConfigurationException;
+import com.cor.collectorservice.util.exception.KeycloakException;
+import com.cor.collectorservice.util.exception.KeycloakOperationException;
 import com.cor.collectorservice.util.exception.KeycloakUnavailableException;
 import com.cor.collectorservice.util.exception.KeycloakUserCreationException;
 import com.cor.collectorservice.util.exception.KeycloakUserDeletionException;
@@ -96,6 +99,9 @@ public class KeycloakAdminClient {
             log.error("Keycloak отказал в создании пользователя {}: статус={}", username, status);
             throw new KeycloakUserCreationException(
                     "Keycloak отказал в создании пользователя " + username + ", статус ответа: " + status);
+        } catch (WebApplicationException ex) {
+            // Сюда попадают отказы самого Admin API, например неудачная авторизация сервисной учётной записи
+            throw translateAdminFailure("создании пользователя " + username, ex);
         } catch (ProcessingException ex) {
             log.error("Не удалось обратиться к Keycloak при создании пользователя {}", username, ex);
             throw new KeycloakUnavailableException(
@@ -138,6 +144,8 @@ public class KeycloakAdminClient {
                     "Keycloak отказал в удалении пользователя " + userId + ", статус ответа: " + status);
         } catch (jakarta.ws.rs.NotFoundException ex) {
             log.warn("Пользователь {} в Keycloak не найден — считаем удаление выполненным", userId);
+        } catch (WebApplicationException ex) {
+            throw translateAdminFailure("удалении пользователя " + userId, ex);
         } catch (ProcessingException ex) {
             log.error("Не удалось обратиться к Keycloak при удалении пользователя {}", userId, ex);
             throw new KeycloakUnavailableException("Keycloak недоступен при удалении пользователя " + userId, ex);
@@ -322,6 +330,32 @@ public class KeycloakAdminClient {
         log.error("Keycloak отказал в обновлении пользователя {}: статус={}", userId, status, ex);
         return new KeycloakUserUpdateException(
                 "Keycloak отказал в обновлении пользователя " + userId + ", статус ответа: " + status, ex);
+    }
+
+    /**
+     * Переводит отказ Admin API в доменное исключение, чтобы наружу не просачивались
+     * исключения JAX-RS.
+     *
+     * @param operation описание операции в предложном падеже, например «удалении пользователя 42»
+     * @param ex        исходная ошибка Admin API
+     * @return исключение, которое следует выбросить вызывающему коду
+     */
+    private KeycloakException translateAdminFailure(String operation, WebApplicationException ex) {
+        int status = ex.getResponse() == null ? 0 : ex.getResponse().getStatus();
+
+        if (status >= HttpStatus.INTERNAL_SERVER_ERROR.value()) {
+            log.error("Keycloak вернул ошибку сервера при {}: статус={}", operation, status, ex);
+            return new KeycloakUnavailableException("Keycloak вернул статус " + status + " при " + operation, ex);
+        }
+        if (status == HttpStatus.UNAUTHORIZED.value() || status == HttpStatus.FORBIDDEN.value()) {
+            log.error("Сервисной учётной записи Keycloak не хватает прав при {}: статус={}", operation, status, ex);
+            return new KeycloakConfigurationException(
+                    "Сервисная учётная запись Keycloak не имеет прав на выполнение операции: " + operation, ex);
+        }
+
+        log.error("Keycloak отказал при {}: статус={}", operation, status, ex);
+        return new KeycloakOperationException(
+                "Keycloak отказал при " + operation + ", статус ответа: " + status, ex);
     }
 
     /**
